@@ -1,0 +1,10 @@
+﻿PyQt6
+pysrt
+pydantic-settings
+transformers
+torch
+sentence-transformers
+edge-tts
+crawl4ai
+python-ass
+webvtt-py
