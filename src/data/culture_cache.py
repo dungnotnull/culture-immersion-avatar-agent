@@ -1,16 +1,15 @@
-﻿import sqlite3
-import json
+import asyncio
+import aiosqlite
 from typing import Optional
 from src.core.logger import logger
 
 class CultureCache:
-    def __init__(self, db_path: str = "data/culture_cache.db"):
+    def __init__(self, db_path: str = "culture_cache.db"):
         self.db_path = db_path
-        self._init_db()
 
-    def _init_db(self):
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
+    async def init_db(self):
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("""
                 CREATE TABLE IF NOT EXISTS culture_cache (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     term TEXT NOT NULL,
@@ -20,19 +19,21 @@ class CultureCache:
                     UNIQUE(term, language)
                 )
             """)
-            conn.commit()
+            await db.commit()
 
-    def get(self, term: str, language: str) -> Optional[str]:
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT explanation FROM culture_cache WHERE term = ? AND language = ?", (term, language))
-            row = cursor.fetchone()
-            return row[0] if row else None
+    async def get(self, term: str, language: str) -> Optional[str]:
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute(
+                "SELECT explanation FROM culture_cache WHERE term = ? AND language = ?", 
+                (term, language)
+            ) as cursor:
+                row = await cursor.fetchone()
+                return row[0] if row else None
 
-    def set(self, term: str, language: str, explanation: str):
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
+    async def set(self, term: str, language: str, explanation: str):
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
                 "INSERT OR REPLACE INTO culture_cache (term, language, explanation) VALUES (?, ?, ?)",
                 (term, language, explanation)
             )
-            conn.commit()
+            await db.commit()
